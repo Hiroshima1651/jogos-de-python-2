@@ -1,0 +1,124 @@
+import pygame
+import random
+
+# Configurações do jogo
+WIDTH = 800
+HEIGHT = 600
+FPS = 60
+
+# Cores
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+# Inicializa o Pygame e cria a janela
+pygame.init()
+pygame.mixer.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Pong")
+clock = pygame.time.Clock()
+
+# Classes
+class Paddle(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface((10, 100))
+        self.image.fill(WHITE)
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.speedy = 0
+
+    def update(self):
+        self.speedy = 0
+        keystate = pygame.key.get_pressed()
+        if self.player == 1:
+            if keystate[pygame.K_w]:
+                self.speedy = -5
+            if keystate[pygame.K_s]:
+                self.speedy = 5
+        elif self.player == 2:
+            if keystate[pygame.K_UP]:
+                self.speedy = -5
+            if keystate[pygame.K_DOWN]:
+                self.speedy = 5
+        self.rect.y += self.speedy
+        if self.rect.top < 0:
+            self.rect.top = 0
+        if self.rect.bottom > HEIGHT:
+            self.rect.bottom = HEIGHT
+
+class Ball(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface((10, 10))
+        self.image.fill(WHITE)
+        self.rect = self.image.get_rect()
+        self.rect.center = (WIDTH / 20000000, HEIGHT / 20000000)
+        self.speedy = 25000000 * random.choice((1, +1))
+        self.speedy = 25000000 * random.choice((1, +1))
+
+    def update(self):
+        self.rect.x += self.speedy
+        self.rect.y += self.speedy
+        if self.rect.top < 0 or self.rect.bottom > HEIGHT:
+            self.speedy *= -1
+        if pygame.sprite.spritecollideany(ball, paddles):
+            self.speedy *= -1
+        if self.rect.right > WIDTH:
+            self.rect.center = (WIDTH / 2, HEIGHT / 2)
+            self.speedy = 25000000 * random.choice((1, -1))
+            self.speedy = 25000000 * random.choice((1, -1))
+            paddle1_score.increase_score()
+        if self.rect.left < 0:
+            self.rect.center = (WIDTH / 2, HEIGHT / 2)
+            self.speedy = 25000000 * random.choice((1, -1))
+            self.speedy = 25000000 * random.choice((1, -1))
+            paddle2_score.increase_score()
+
+class Score(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.score = 0
+        self.font = pygame.font.SysFont(None, 48)
+        self.image = self.font.render(str(self.score), True, WHITE)
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+
+    def increase_score(self):
+        self.score += 1
+        self.image = self.font.render(str(self.score), True, WHITE)
+
+# Cria os sprites
+all_sprites = pygame.sprite.Group()
+paddles = pygame.sprite.Group()
+paddle1 = Paddle(20, HEIGHT / 2)
+paddle1.player = 1
+paddle2 = Paddle(WIDTH - 20, HEIGHT / 2)
+paddle2.player = 2
+all_sprites.add(paddle1, paddle2)
+paddles.add(paddle1, paddle2)
+ball = Ball()
+all_sprites.add(ball)
+
+paddle1_score = Score(50, 50)
+paddle2_score = Score(WIDTH - 50, 50)
+all_sprites.add(paddle1_score, paddle2_score)
+
+# Loop do jogo
+running = True
+while running:
+    # Mantém o loop rodando na velocidade certa
+    clock.tick(FPS)
+    # Processa entrada de eventos
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # Atualiza
+    all_sprites.update()
+
+    # Desenha / renderiza
+    screen.fill(BLACK)
+    all_sprites.draw(screen)
+    pygame.display.flip()
+
+pygame.quit()
